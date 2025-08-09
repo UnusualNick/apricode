@@ -1,4 +1,16 @@
-export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+export enum TaskPriority {
+  LOW = 'low',
+  MEDIUM = 'medium',
+  HIGH = 'high',
+  URGENT = 'urgent'
+}
+
+export enum TaskCompletionStatus {
+  TODO = 'todo',
+  IN_PROGRESS = 'in-progress',
+  COMPLETED = 'completed',
+  PAUSED = 'paused'
+}
 
 export interface Task {
   id: string;
@@ -6,6 +18,7 @@ export interface Task {
   description?: string;
   completed: boolean;
   priority: TaskPriority;
+  completionStatus: TaskCompletionStatus;
   children: Task[];
   parentId?: string;
   createdAt: Date;
@@ -16,6 +29,7 @@ export interface TaskFormData {
   title: string;
   description?: string;
   priority: TaskPriority;
+  completionStatus: TaskCompletionStatus;
 }
 
 export interface TaskStore {

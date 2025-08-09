@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
+import { observer } from 'mobx-react-lite';
 import { taskStore } from '@/entities/task/model/TaskStore';
-import { Task, TaskFormData, TaskPriority } from '@/entities/task/model/Task.types';
+import { Task, TaskFormData, TaskPriority, TaskCompletionStatus } from '@/entities/task/model/Task.types';
 import {
   Dialog,
   DialogContent,
@@ -30,69 +31,50 @@ interface EditTaskModalProps {
   title?: string;
 }
 
-export const EditTaskModal: React.FC<EditTaskModalProps> = ({
+export const EditTaskModal: React.FC<EditTaskModalProps> = observer(({
   isOpen,
   onClose,
   task,
   parentId,
   title = 'Edit Task',
 }) => {
-  const [formData, setFormData] = useState<TaskFormData>({
-    title: '',
-    description: '',
-    priority: 'medium',
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   // Initialize form data when modal opens or task changes
   useEffect(() => {
-    if (isOpen) {
-      if (task) {
-        setFormData({
-          title: task.title,
-          description: task.description || '',
-          priority: task.priority,
-        });
-      } else {
-        setFormData({
-          title: '',
-          description: '',
-          priority: 'medium',
-        });
-      }
+    if (isOpen && task) {
+      // Form data is already set by taskStore.openEditModal
     }
   }, [isOpen, task]);
 
   const handleInputChange = (field: keyof TaskFormData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
+    taskStore.updateFormData(field, value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title.trim()) {
+    if (!taskStore.taskFormData.title.trim()) {
       return;
     }
 
-    setIsSubmitting(true);
+    taskStore.setIsSubmitting(true);
 
     try {
       if (task) {
         // Update existing task
         taskStore.updateTask(task.id, {
-          title: formData.title.trim(),
-          description: formData.description?.trim() || undefined,
+          title: taskStore.taskFormData.title.trim(),
+          description: taskStore.taskFormData.description?.trim() || undefined,
+          priority: taskStore.taskFormData.priority,
+          completionStatus: taskStore.taskFormData.completionStatus,
         });
       } else {
         // Create new task
         taskStore.addTask(
           {
-            title: formData.title.trim(),
-            description: formData.description?.trim() || undefined,
-            priority: formData.priority,
+            title: taskStore.taskFormData.title.trim(),
+            description: taskStore.taskFormData.description?.trim() || undefined,
+            priority: taskStore.taskFormData.priority,
+            completionStatus: taskStore.taskFormData.completionStatus,
           },
           parentId
         );
@@ -102,7 +84,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
     } catch (error) {
       console.error('Failed to save task:', error);
     } finally {
-      setIsSubmitting(false);
+      taskStore.setIsSubmitting(false);
     }
   };
 
@@ -123,7 +105,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
               <Label htmlFor="title">Title</Label>
               <Input
                 id="title"
-                value={formData.title}
+                value={taskStore.taskFormData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
                 placeholder="Enter task title..."
                 required
@@ -135,7 +117,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
               <Label htmlFor="description">Description</Label>
               <Input
                 id="description"
-                value={formData.description}
+                value={taskStore.taskFormData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="Enter task description (optional)..."
               />
@@ -143,26 +125,56 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
 
             <div className="grid gap-2">
               <Label htmlFor="priority">Priority</Label>
-              <Select value={formData.priority} onValueChange={(value: TaskPriority) => handleInputChange('priority', value)}>
+              <Select value={taskStore.taskFormData.priority} onValueChange={(value: TaskPriority) => handleInputChange('priority', value)}>
                 <SelectTrigger className="w-full">
                   <SelectValue>
                     <div className="flex items-center">
                       <TypedBadge 
-                        parameter={formData.priority}
+                        parameter={taskStore.taskFormData.priority}
                         type="priority"
-                        className="scale-90"
+                        className="scale-90 transform-none"
                       />
                     </div>
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {(['low', 'medium', 'high', 'urgent'] as const).map((priority) => (
+                  {Object.values(TaskPriority).map((priority) => (
                     <SelectItem key={priority} value={priority}>
                       <div className="flex items-center">
                         <TypedBadge 
                           parameter={priority}
                           type="priority"
-                          className="scale-90"
+                          className="scale-90 transform-none"
+                        />
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="completionStatus">Completion Status</Label>
+              <Select value={taskStore.taskFormData.completionStatus} onValueChange={(value: TaskCompletionStatus) => handleInputChange('completionStatus', value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    <div className="flex items-center">
+                      <TypedBadge 
+                        parameter={taskStore.taskFormData.completionStatus}
+                        type="status"
+                        className="scale-90 transform-none"
+                      />
+                    </div>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.values(TaskCompletionStatus).map((completionStatus) => (
+                    <SelectItem key={completionStatus} value={completionStatus}>
+                      <div className="flex items-center">
+                        <TypedBadge 
+                          parameter={completionStatus}
+                          type="status"
+                          className="scale-90 transform-none"
                         />
                       </div>
                     </SelectItem>
@@ -177,19 +189,19 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
               type="button"
               variant="outline"
               onClick={handleCancel}
-              disabled={isSubmitting}
+              disabled={taskStore.isSubmitting}
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              disabled={!formData.title.trim() || isSubmitting}
+              disabled={!taskStore.taskFormData.title.trim() || taskStore.isSubmitting}
             >
-              {isSubmitting ? 'Saving...' : task ? 'Update' : 'Create'}
+              {taskStore.isSubmitting ? 'Saving...' : task ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   );
-};
+});

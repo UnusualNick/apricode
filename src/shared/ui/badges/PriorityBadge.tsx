@@ -9,7 +9,7 @@ interface PriorityBadgeProps {
 
 const PriorityBadge = ({ priority, className = "" }: PriorityBadgeProps) => {
   switch (priority) {
-    case 'low':
+    case TaskPriority.LOW:
       return (
         <Badge 
           variant="secondary" 
@@ -19,7 +19,7 @@ const PriorityBadge = ({ priority, className = "" }: PriorityBadgeProps) => {
           Low
         </Badge>
       );
-    case 'medium':
+    case TaskPriority.MEDIUM:
       return (
         <Badge 
           variant="default" 
@@ -29,7 +29,7 @@ const PriorityBadge = ({ priority, className = "" }: PriorityBadgeProps) => {
           Medium
         </Badge>
       );
-    case 'high':
+    case TaskPriority.HIGH:
       return (
         <Badge 
           variant="secondary" 
@@ -39,7 +39,7 @@ const PriorityBadge = ({ priority, className = "" }: PriorityBadgeProps) => {
           High
         </Badge>
       );
-    case 'urgent':
+    case TaskPriority.URGENT:
       return (
         <Badge 
           variant="secondary" 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { observer } from 'mobx-react-lite';
 import { TaskSidebar } from '@/shared/ui/TaskSidebar';
 import { TaskDetails } from '@/entities/task/ui/TaskDetails';
@@ -8,38 +8,20 @@ import { EditTaskModal } from '@/features/taskActions/ui/EditTaskModal';
 import { Task } from '@/entities/task/model/Task.types';
 import { taskStore } from '@/entities/task/model/TaskStore';
 import { ThemeToggle } from '@/shared/ui/ThemeToggle';
+import { Button } from '@/shared/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const Home = observer(() => {
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [addingChildToTaskId, setAddingChildToTaskId] = useState<string | null>(null);
-  const [isAddChildModalOpen, setIsAddChildModalOpen] = useState(false);
-
   const handleEditTask = (task: Task) => {
-    setEditingTask(task);
-    setIsEditModalOpen(true);
+    taskStore.openEditModal(task.id);
   };
 
   const handleEditTaskById = (taskId: string) => {
-    const task = taskStore.findTaskById(taskId);
-    if (task) {
-      handleEditTask(task);
-    }
-  };
-
-  const handleCloseEditModal = () => {
-    setEditingTask(null);
-    setIsEditModalOpen(false);
+    taskStore.openEditModal(taskId);
   };
 
   const handleAddChild = (parentId: string) => {
-    setAddingChildToTaskId(parentId);
-    setIsAddChildModalOpen(true);
-  };
-
-  const handleCloseAddChildModal = () => {
-    setAddingChildToTaskId(null);
-    setIsAddChildModalOpen(false);
+    taskStore.openAddChildModal(parentId);
   };
 
   const handleDeleteTask = (taskId: string) => {
@@ -54,19 +36,31 @@ const Home = observer(() => {
         onEdit={handleEditTask}
         onDelete={handleDeleteTask}
         onAddChild={handleAddChild}
+        isCollapsed={taskStore.isSidebarCollapsed}
+        onToggleCollapse={taskStore.setSidebarCollapsed}
       />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">Task Manager</h1>
-                <p className="text-muted-foreground text-sm">
-                  Organize your tasks in a hierarchical structure
-                </p>
+          <div className="px-6 py-4 h-[73px] flex items-center">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={taskStore.toggleSidebar}
+                  className="shrink-0"
+                >
+                  {taskStore.isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                </Button>
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight">Task Manager</h1>
+                  <p className="text-muted-foreground text-sm">
+                    Organize your tasks in a hierarchical structure
+                  </p>
+                </div>
               </div>
               <ThemeToggle />
             </div>
@@ -84,17 +78,17 @@ const Home = observer(() => {
 
       {/* Edit Task Modal */}
       <EditTaskModal
-        isOpen={isEditModalOpen}
-        onClose={handleCloseEditModal}
-        task={editingTask || undefined}
-        title={editingTask ? 'Edit Task' : 'Create Task'}
+        isOpen={taskStore.isEditModalOpen}
+        onClose={taskStore.closeEditModal}
+        task={taskStore.editingTask}
+        title={taskStore.editingTask ? 'Edit Task' : 'Create Task'}
       />
 
       {/* Add Child Task Modal */}
       <EditTaskModal
-        isOpen={isAddChildModalOpen}
-        onClose={handleCloseAddChildModal}
-        parentId={addingChildToTaskId || undefined}
+        isOpen={taskStore.isAddChildModalOpen}
+        onClose={taskStore.closeAddChildModal}
+        parentId={taskStore.addingChildToTaskId || undefined}
         title="Add Subtask"
       />
     </div>

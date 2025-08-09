@@ -1,5 +1,5 @@
 import { makeAutoObservable, runInAction } from 'mobx';
-import { Task, TaskFormData } from './Task.types';
+import { Task, TaskFormData, TaskPriority, TaskCompletionStatus } from './Task.types';
 import { generateId } from '@/shared/lib/generateId';
 import { loadFromLocalStorage, saveToLocalStorage } from '@/shared/lib/localStorage';
 
@@ -10,13 +10,62 @@ export class TaskStore {
   isLoading: boolean = false;
   error: string | null = null;
 
+  // UI State
+  isSidebarCollapsed: boolean = false;
+  sidebarWidth: number = 400;
+  
+  // Modal State
+  editingTaskId: string | null = null;
+  isEditModalOpen: boolean = false;
+  addingChildToTaskId: string | null = null;
+  isAddChildModalOpen: boolean = false;
+  
+  // Form State
+  taskFormData: TaskFormData = {
+    title: '',
+    description: '',
+    priority: TaskPriority.MEDIUM,
+    completionStatus: TaskCompletionStatus.TODO,
+  };
+  isSubmitting: boolean = false;
+
   constructor() {
     makeAutoObservable(this);
-    // Only load tasks on client side
+    // Only load data on client side
     if (typeof window !== 'undefined') {
       this.loadTasks();
+      this.loadUIPreferences();
     }
   }
+
+  // Load UI preferences from localStorage
+  loadUIPreferences = () => {
+    try {
+      const preferences = loadFromLocalStorage<{
+        isSidebarCollapsed: boolean;
+        sidebarWidth: number;
+      }>('uiPreferences');
+      
+      if (preferences) {
+        this.isSidebarCollapsed = preferences.isSidebarCollapsed ?? false;
+        this.sidebarWidth = preferences.sidebarWidth ?? 400;
+      }
+    } catch (error) {
+      console.error('Failed to load UI preferences:', error);
+    }
+  };
+
+  // Save UI preferences to localStorage
+  saveUIPreferences = () => {
+    try {
+      saveToLocalStorage('uiPreferences', {
+        isSidebarCollapsed: this.isSidebarCollapsed,
+        sidebarWidth: this.sidebarWidth,
+      });
+    } catch (error) {
+      console.error('Failed to save UI preferences:', error);
+    }
+  };
 
   // Load tasks from localStorage
   loadTasks = () => {
@@ -52,6 +101,7 @@ export class TaskStore {
       description: taskData.description,
       completed: false,
       priority: taskData.priority,
+      completionStatus: taskData.completionStatus || TaskCompletionStatus.TODO,
       parentId,
       children: [],
       createdAt: new Date(),
@@ -87,6 +137,9 @@ export class TaskStore {
     if (task) {
       const newCompletedState = !task.completed;
       task.completed = newCompletedState;
+      
+      // Update completionStatus based on completion state
+      task.completionStatus = newCompletedState ? TaskCompletionStatus.COMPLETED : TaskCompletionStatus.IN_PROGRESS;
       task.updatedAt = new Date();
       
       // If marking as completed, mark all children as completed
@@ -110,6 +163,7 @@ export class TaskStore {
   private markChildrenCompleted = (children: Task[], completed: boolean) => {
     children.forEach(child => {
       child.completed = completed;
+      child.completionStatus = completed ? TaskCompletionStatus.COMPLETED : TaskCompletionStatus.IN_PROGRESS;
       child.updatedAt = new Date();
       if (child.children) {
         this.markChildrenCompleted(child.children, completed);
@@ -129,6 +183,7 @@ export class TaskStore {
         
         if (parent.completed !== shouldBeCompleted) {
           parent.completed = shouldBeCompleted;
+          parent.completionStatus = shouldBeCompleted ? TaskCompletionStatus.COMPLETED : TaskCompletionStatus.IN_PROGRESS;
           parent.updatedAt = new Date();
         }
         
@@ -195,6 +250,55 @@ export class TaskStore {
   // Clear error
   clearError = () => {
     this.error = null;
+  };
+
+  // Cycle task priority
+  cyclePriority = (taskId: string) => {
+    const task = this.findTaskById(taskId);
+    if (task) {
+      const priorities: TaskPriority[] = [TaskPriority.LOW, TaskPriority.MEDIUM, TaskPriority.HIGH, TaskPriority.URGENT];
+      const currentIndex = priorities.indexOf(task.priority);
+      const nextIndex = (currentIndex + 1) % priorities.length;
+      task.priority = priorities[nextIndex];
+      task.updatedAt = new Date();
+      this.saveTasks();
+    }
+  };
+
+  // Cycle task status
+  cycleCompletionStatus = (taskId: string) => {
+    const task = this.findTaskById(taskId);
+    if (task) {
+      const statuses: TaskCompletionStatus[] = [TaskCompletionStatus.TODO, TaskCompletionStatus.IN_PROGRESS, TaskCompletionStatus.PAUSED, TaskCompletionStatus.COMPLETED];
+      const currentIndex = statuses.indexOf(task.completionStatus);
+      const nextIndex = (currentIndex + 1) % statuses.length;
+      const oldCompletedState = task.completed;
+      
+      task.completionStatus = statuses[nextIndex];
+      
+      // Update completed state based on completionStatus
+      const newCompletedState = task.completionStatus === TaskCompletionStatus.COMPLETED;
+      task.completed = newCompletedState;
+      task.updatedAt = new Date();
+      
+      // Handle parent-child completion logic only if completion state actually changed
+      if (oldCompletedState !== newCompletedState) {
+        // If marking as completed, mark all children as completed
+        if (newCompletedState && task.children) {
+          this.markChildrenCompleted(task.children, true);
+        }
+        
+        // If marking as incomplete, mark all children as incomplete
+        if (!newCompletedState && task.children) {
+          this.markChildrenCompleted(task.children, false);
+        }
+        
+        // Update parent completion status
+        this.updateParentCompletionStatus(task);
+      }
+      
+      this.saveTasks();
+    }
   };
 
   // Expansion state management
@@ -283,6 +387,7 @@ export class TaskStore {
         const allChildrenCompleted = task.children.every(child => child.completed);
         if (task.completed !== allChildrenCompleted) {
           task.completed = allChildrenCompleted;
+          task.completionStatus = allChildrenCompleted ? TaskCompletionStatus.COMPLETED : TaskCompletionStatus.IN_PROGRESS;
           task.updatedAt = new Date();
         }
       }
@@ -308,7 +413,8 @@ export class TaskStore {
           title: 'The House That Jack Built',
           description: 'A grand project of interconnected tasks',
           completed: false,
-          priority: 'high',
+          priority: TaskPriority.HIGH,
+          completionStatus: TaskCompletionStatus.IN_PROGRESS,
           createdAt: now,
           updatedAt: now,
           children: [
@@ -317,7 +423,8 @@ export class TaskStore {
               title: 'Lay the foundation',
               description: 'The foundation that supports the house',
               completed: true,
-              priority: 'urgent',
+              priority: TaskPriority.URGENT,
+              completionStatus: TaskCompletionStatus.COMPLETED,
               parentId: '1',
               createdAt: now,
               updatedAt: now,
@@ -328,7 +435,8 @@ export class TaskStore {
               title: 'Build the walls',
               description: 'The walls that stand on the foundation',
               completed: false, // Set to false initially so the logic can work
-              priority: 'high',
+              priority: TaskPriority.HIGH,
+              completionStatus: TaskCompletionStatus.IN_PROGRESS,
               parentId: '1',
               createdAt: now,
               updatedAt: now,
@@ -338,7 +446,8 @@ export class TaskStore {
                   title: 'Mix the mortar',
                   description: 'The mortar that holds the bricks',
                   completed: true,
-                  priority: 'medium',
+                  priority: TaskPriority.MEDIUM,
+                  completionStatus: TaskCompletionStatus.COMPLETED,
                   parentId: '1.2',
                   createdAt: now,
                   updatedAt: now,
@@ -349,7 +458,8 @@ export class TaskStore {
                   title: 'Lay the bricks',
                   description: 'The bricks that make the walls',
                   completed: true,
-                  priority: 'medium',
+                  priority: TaskPriority.MEDIUM,
+                  completionStatus: TaskCompletionStatus.COMPLETED,
                   parentId: '1.2',
                   createdAt: now,
                   updatedAt: now,
@@ -362,7 +472,8 @@ export class TaskStore {
               title: 'Install the roof',
               description: 'The roof that covers the house',
               completed: false,
-              priority: 'high',
+              priority: TaskPriority.HIGH,
+              completionStatus: TaskCompletionStatus.TODO,
               parentId: '1',
               createdAt: now,
               updatedAt: now,
@@ -372,7 +483,8 @@ export class TaskStore {
                   title: 'Cut the rafters',
                   description: 'The rafters that support the roof',
                   completed: false,
-                  priority: 'medium',
+                  priority: TaskPriority.MEDIUM,
+                  completionStatus: TaskCompletionStatus.TODO,
                   parentId: '1.3',
                   createdAt: now,
                   updatedAt: now,
@@ -383,7 +495,8 @@ export class TaskStore {
                   title: 'Install shingles',
                   description: 'The shingles that cover the rafters',
                   completed: false,
-                  priority: 'low',
+                  priority: TaskPriority.LOW,
+                  completionStatus: TaskCompletionStatus.TODO,
                   parentId: '1.3',
                   createdAt: now,
                   updatedAt: now,
@@ -398,7 +511,8 @@ export class TaskStore {
           title: 'Stock the house',
           description: 'Fill the house with provisions',
           completed: false,
-          priority: 'medium',
+          priority: TaskPriority.MEDIUM,
+          completionStatus: TaskCompletionStatus.TODO,
           createdAt: now,
           updatedAt: now,
           children: [
@@ -407,7 +521,8 @@ export class TaskStore {
               title: 'Store the malt',
               description: 'The malt that lay in the house',
               completed: false,
-              priority: 'low',
+              priority: TaskPriority.LOW,
+              completionStatus: TaskCompletionStatus.TODO,
               parentId: '2',
               createdAt: now,
               updatedAt: now,
@@ -418,7 +533,8 @@ export class TaskStore {
               title: 'Keep the cat',
               description: 'The cat that killed the rat that ate the malt',
               completed: false,
-              priority: 'medium',
+              priority: TaskPriority.MEDIUM,
+              completionStatus: TaskCompletionStatus.PAUSED,
               parentId: '2',
               createdAt: now,
               updatedAt: now,
@@ -428,7 +544,8 @@ export class TaskStore {
                   title: 'Feed the cat',
                   description: 'Daily feeding schedule',
                   completed: false,
-                  priority: 'medium',
+                  priority: TaskPriority.MEDIUM,
+                  completionStatus: TaskCompletionStatus.IN_PROGRESS,
                   parentId: '2.2',
                   createdAt: now,
                   updatedAt: now,
@@ -439,7 +556,8 @@ export class TaskStore {
                   title: 'Train the cat',
                   description: 'Teach hunting skills',
                   completed: false,
-                  priority: 'low',
+                  priority: TaskPriority.LOW,
+                  completionStatus: TaskCompletionStatus.TODO,
                   parentId: '2.2',
                   createdAt: now,
                   updatedAt: now,
@@ -454,7 +572,8 @@ export class TaskStore {
           title: 'Hire the staff',
           description: 'Assemble the household team',
           completed: false,
-          priority: 'low',
+          priority: TaskPriority.LOW,
+          completionStatus: TaskCompletionStatus.TODO,
           createdAt: now,
           updatedAt: now,
           children: [
@@ -463,7 +582,8 @@ export class TaskStore {
               title: 'Find the maiden',
               description: 'The maiden all forlorn that milked the cow',
               completed: false,
-              priority: 'low',
+              priority: TaskPriority.LOW,
+              completionStatus: TaskCompletionStatus.TODO,
               parentId: '3',
               createdAt: now,
               updatedAt: now,
@@ -474,7 +594,8 @@ export class TaskStore {
               title: 'Recruit the man',
               description: 'The man all tattered and torn that kissed the maiden',
               completed: false,
-              priority: 'low',
+              priority: TaskPriority.LOW,
+              completionStatus: TaskCompletionStatus.TODO,
               parentId: '3',
               createdAt: now,
               updatedAt: now,
@@ -492,6 +613,85 @@ export class TaskStore {
       this.saveTasks();
     });
   };
+
+  // === UI State Management ===
+  
+  // Sidebar State
+  toggleSidebar = () => {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+    this.saveUIPreferences();
+  };
+  
+  setSidebarCollapsed = (collapsed: boolean) => {
+    this.isSidebarCollapsed = collapsed;
+    this.saveUIPreferences();
+  };
+  
+  setSidebarWidth = (width: number) => {
+    this.sidebarWidth = Math.max(280, Math.min(800, width));
+    this.saveUIPreferences();
+  };
+  
+  // Modal State Management
+  openEditModal = (taskId?: string) => {
+    if (taskId) {
+      const task = this.findTaskById(taskId);
+      if (task) {
+        this.editingTaskId = taskId;
+        this.taskFormData = {
+          title: task.title,
+          description: task.description || '',
+          priority: task.priority,
+          completionStatus: task.completionStatus,
+        };
+      }
+    } else {
+      this.editingTaskId = null;
+      this.resetFormData();
+    }
+    this.isEditModalOpen = true;
+  };
+  
+  closeEditModal = () => {
+    this.editingTaskId = null;
+    this.isEditModalOpen = false;
+    this.resetFormData();
+  };
+  
+  openAddChildModal = (parentId: string) => {
+    this.addingChildToTaskId = parentId;
+    this.isAddChildModalOpen = true;
+    this.resetFormData();
+  };
+  
+  closeAddChildModal = () => {
+    this.addingChildToTaskId = null;
+    this.isAddChildModalOpen = false;
+    this.resetFormData();
+  };
+  
+  // Form State Management
+  resetFormData = () => {
+    this.taskFormData = {
+      title: '',
+      description: '',
+      priority: TaskPriority.MEDIUM,
+      completionStatus: TaskCompletionStatus.TODO,
+    };
+  };
+  
+  updateFormData = (field: keyof TaskFormData, value: string | TaskPriority | TaskCompletionStatus) => {
+    this.taskFormData = { ...this.taskFormData, [field]: value };
+  };
+  
+  setIsSubmitting = (submitting: boolean) => {
+    this.isSubmitting = submitting;
+  };
+  
+  // Get the task being edited
+  get editingTask(): Task | undefined {
+    return this.editingTaskId ? this.findTaskById(this.editingTaskId) : undefined;
+  }
 }
 
 // Create singleton instance

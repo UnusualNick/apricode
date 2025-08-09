@@ -59,15 +59,35 @@ export const TaskDetails = observer(({ onEdit, onAddChild }: TaskDetailsProps) =
 
       {/* Status and Priority Badges */}
       <div className="flex items-center gap-2 flex-wrap">
-        <TypedBadge 
-          parameter={selectedTask.completed}
-          type="completion"
-        />
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            taskStore.cyclePriority(selectedTask.id);
+          }}
+          className="cursor-pointer hover:opacity-80 transition-opacity transform-none"
+          title="Click to cycle priority"
+        >
+          <TypedBadge 
+            parameter={selectedTask.priority}
+            type="priority"
+            className="select-none transform-none"
+          />
+        </div>
         
-        <TypedBadge 
-          parameter={selectedTask.priority}
-          type="priority"
-        />
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            taskStore.cycleCompletionStatus(selectedTask.id);
+          }}
+          className="cursor-pointer hover:opacity-80 transition-opacity transform-none"
+          title="Click to cycle completion status"
+        >
+          <TypedBadge 
+            parameter={selectedTask.completionStatus}
+            type="status"
+            className="select-none transform-none"
+          />
+        </div>
       </div>
 
       {/* Task Title */}

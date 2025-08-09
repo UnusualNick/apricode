@@ -72,7 +72,7 @@ export const DeleteTaskButton: React.FC<DeleteTaskButtonProps> = ({
             <DialogTitle>Delete Task</DialogTitle>
             <DialogDescription>
               Are you sure you want to delete &quot;{taskTitle}&quot;? This action cannot be undone.
-              {taskStore.findTaskById(taskId)?.children?.length && (
+              {(taskStore.findTaskById(taskId)?.children?.length || 0) > 0 && (
                 <span className="block mt-2 font-medium">
                   This will also delete all subtasks.
                 </span>

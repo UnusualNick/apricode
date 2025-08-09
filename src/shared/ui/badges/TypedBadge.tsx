@@ -1,38 +1,21 @@
-import { TaskPriority } from '@/entities/task/model/Task.types';
+import { TaskPriority, TaskCompletionStatus } from '@/entities/task/model/Task.types';
 import PriorityBadge from './PriorityBadge';
 import StatusBadge from './StatusBadge';
 
-type TaskStatus = 'todo' | 'in-progress' | 'completed' | 'paused';
-
-// Define the enums for type checking similar to your example
-const TaskPriorityValues = {
-  low: 'low',
-  medium: 'medium', 
-  high: 'high',
-  urgent: 'urgent'
-} as const;
-
-const TaskStatusValues = {
-  todo: 'todo',
-  'in-progress': 'in-progress',
-  completed: 'completed',
-  paused: 'paused'
-} as const;
-
 interface TypedBadgeProps {
-  parameter: TaskPriority | TaskStatus | boolean;
+  parameter: TaskPriority | TaskCompletionStatus | boolean;
   className?: string;
   type?: 'priority' | 'status' | 'completion';
 }
 
 const TypedBadge = ({ parameter, className = "", type }: TypedBadgeProps) => {
-  // Smart type detection similar to your implementation
+  // Smart type detection using enum values
   if (!type) {
     if (typeof parameter === 'boolean') {
       type = 'completion';
-    } else if (Object.values(TaskPriorityValues).includes(parameter as TaskPriority)) {
+    } else if (Object.values(TaskPriority).includes(parameter as TaskPriority)) {
       type = 'priority';
-    } else if (Object.values(TaskStatusValues).includes(parameter as TaskStatus)) {
+    } else if (Object.values(TaskCompletionStatus).includes(parameter as TaskCompletionStatus)) {
       type = 'status';
     }
   }
@@ -43,10 +26,10 @@ const TypedBadge = ({ parameter, className = "", type }: TypedBadgeProps) => {
       return <PriorityBadge priority={parameter as TaskPriority} className={className} />;
     
     case 'status':
-      return <StatusBadge status={parameter as TaskStatus} className={className} />;
+      return <StatusBadge status={parameter as TaskCompletionStatus} className={className} />;
     
     case 'completion':
-      const completionStatus = parameter as boolean ? 'completed' : 'in-progress';
+      const completionStatus = parameter as boolean ? TaskCompletionStatus.COMPLETED : TaskCompletionStatus.IN_PROGRESS;
       return <StatusBadge status={completionStatus} className={className} />;
     
     default:

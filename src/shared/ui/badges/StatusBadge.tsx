@@ -1,36 +1,35 @@
 import { Badge } from '@/shared/ui/badge';
 import { CheckCircle, Circle, Clock, Pause } from 'lucide-react';
-
-type TaskStatus = 'todo' | 'in-progress' | 'completed' | 'paused';
+import { TaskCompletionStatus } from '@/entities/task/model/Task.types';
 
 interface StatusBadgeProps {
-  status: TaskStatus;
+  status: TaskCompletionStatus;
   className?: string;
 }
 
 const StatusBadge = ({ status, className = "" }: StatusBadgeProps) => {
   switch (status) {
-    case 'todo':
+    case TaskCompletionStatus.TODO:
       return (
         <Badge 
           variant="secondary" 
           className={`border-gray-200/50 dark:border-gray-600/50 text-gray-700 dark:text-gray-200 bg-gray-50/80 dark:bg-gray-700/30 hover:bg-gray-100 dark:hover:bg-gray-600/50 transition-colors duration-200 ${className}`}
         >
           <Circle className="h-3 w-3 mr-1" />
-          To Do
+          To&nbsp;Do
         </Badge>
       );
-    case 'in-progress':
+    case TaskCompletionStatus.IN_PROGRESS:
       return (
         <Badge 
           variant="default" 
           className={`border-blue-200/50 dark:border-blue-700/50 text-blue-700 dark:text-blue-200 bg-blue-50/80 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-800/50 transition-colors duration-200 ${className}`}
         >
           <Clock className="h-3 w-3 mr-1" />
-          In Progress
+          In&nbsp;Progress
         </Badge>
       );
-    case 'completed':
+    case TaskCompletionStatus.COMPLETED:
       return (
         <Badge 
           variant="secondary" 
@@ -40,7 +39,7 @@ const StatusBadge = ({ status, className = "" }: StatusBadgeProps) => {
           Completed
         </Badge>
       );
-    case 'paused':
+    case TaskCompletionStatus.PAUSED:
       return (
         <Badge 
           variant="outline" 
