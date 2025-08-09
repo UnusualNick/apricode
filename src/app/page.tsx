@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { TaskTree } from '@/entities/task/ui/TaskTree';
-import { AddTaskButton } from '@/features/taskActions/ui/AddTaskButton';
+import { observer } from 'mobx-react-lite';
+import { TaskSidebar } from '@/shared/ui/TaskSidebar';
+import { TaskDetails } from '@/entities/task/ui/TaskDetails';
 import { EditTaskModal } from '@/features/taskActions/ui/EditTaskModal';
-import { DeleteTaskButton } from '@/features/taskActions/ui/DeleteTaskButton';
 import { Task } from '@/entities/task/model/Task.types';
+import { taskStore } from '@/entities/task/model/TaskStore';
+import { ThemeToggle } from '@/shared/ui/ThemeToggle';
 
-export default function Home() {
+const Home = observer(() => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [addingChildToTaskId, setAddingChildToTaskId] = useState<string | null>(null);
@@ -16,6 +18,13 @@ export default function Home() {
   const handleEditTask = (task: Task) => {
     setEditingTask(task);
     setIsEditModalOpen(true);
+  };
+
+  const handleEditTaskById = (taskId: string) => {
+    const task = taskStore.findTaskById(taskId);
+    if (task) {
+      handleEditTask(task);
+    }
   };
 
   const handleCloseEditModal = () => {
@@ -39,48 +48,37 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Task Manager</h1>
-              <p className="text-muted-foreground">
-                Organize your tasks in a hierarchical structure
-              </p>
-            </div>
-            <AddTaskButton />
-          </div>
+    <div className="min-h-screen bg-background flex">
+      {/* Collapsible Sidebar */}
+      <TaskSidebar
+        onEdit={handleEditTask}
+        onDelete={handleDeleteTask}
+        onAddChild={handleAddChild}
+      />
 
-          {/* Main Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Task List */}
-            <div className="lg:col-span-2">
-              <div className="border rounded-lg p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold">Tasks</h2>
-                  <AddTaskButton variant="outline" size="sm" />
-                </div>
-                <TaskTree
-                  onEdit={handleEditTask}
-                  onDelete={handleDeleteTask}
-                  onAddChild={handleAddChild}
-                />
-              </div>
-            </div>
-
-            {/* Task Details Sidebar */}
-            <div className="lg:col-span-1">
-              <div className="border rounded-lg p-4">
-                <h2 className="text-xl font-semibold mb-4">Task Details</h2>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">Task Manager</h1>
                 <p className="text-muted-foreground text-sm">
-                  Select a task to view details
+                  Organize your tasks in a hierarchical structure
                 </p>
-                {/* This will be implemented later for the detailed view */}
               </div>
+              <ThemeToggle />
             </div>
           </div>
+        </div>
+
+        {/* Main Task View */}
+        <div className="flex-1 p-6">
+          <TaskDetails
+            onEdit={handleEditTaskById}
+            onAddChild={handleAddChild}
+          />
         </div>
       </div>
 
@@ -101,4 +99,6 @@ export default function Home() {
       />
     </div>
   );
-}
+});
+
+export default Home;

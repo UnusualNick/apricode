@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import '@/shared/lib/i18n';
+import { ThemeProvider } from '@/shared/providers/ThemeProvider';
 
 interface ClientWrapperProps {
   children: React.ReactNode;
@@ -13,5 +14,9 @@ export function ClientWrapper({ children }: ClientWrapperProps) {
     import('@/shared/lib/i18n');
   }, []);
 
-  return <>{children}</>;
+  return (
+    <ThemeProvider>
+      {children}
+    </ThemeProvider>
+  );
 }

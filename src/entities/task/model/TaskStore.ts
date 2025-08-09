@@ -6,12 +6,16 @@ import { loadFromLocalStorage, saveToLocalStorage } from '@/shared/lib/localStor
 export class TaskStore {
   tasks: Task[] = [];
   selectedTaskId: string | null = null;
-  isLoading = false;
+  expandedTaskIds: Set<string> = new Set(); // Track expanded tasks
+  isLoading: boolean = false;
   error: string | null = null;
 
   constructor() {
     makeAutoObservable(this);
-    this.loadTasks();
+    // Only load tasks on client side
+    if (typeof window !== 'undefined') {
+      this.loadTasks();
+    }
   }
 
   // Load tasks from localStorage
@@ -47,6 +51,7 @@ export class TaskStore {
       title: taskData.title,
       description: taskData.description,
       completed: false,
+      priority: taskData.priority,
       parentId,
       children: [],
       createdAt: new Date(),
@@ -57,9 +62,6 @@ export class TaskStore {
       // Add as child task
       const parentTask = this.findTaskById(parentId);
       if (parentTask) {
-        if (!parentTask.children) {
-          parentTask.children = [];
-        }
         parentTask.children.push(newTask);
       }
     } else {
@@ -79,13 +81,60 @@ export class TaskStore {
     }
   };
 
-  // Toggle task completion
+  // Toggle task completion with parent-child logic
   toggleTask = (taskId: string) => {
     const task = this.findTaskById(taskId);
     if (task) {
-      task.completed = !task.completed;
+      const newCompletedState = !task.completed;
+      task.completed = newCompletedState;
       task.updatedAt = new Date();
+      
+      // If marking as completed, mark all children as completed
+      if (newCompletedState && task.children) {
+        this.markChildrenCompleted(task.children, true);
+      }
+      
+      // If marking as incomplete, mark all children as incomplete
+      if (!newCompletedState && task.children) {
+        this.markChildrenCompleted(task.children, false);
+      }
+      
+      // Update parent completion status
+      this.updateParentCompletionStatus(task);
+      
       this.saveTasks();
+    }
+  };
+
+  // Helper method to mark all children as completed/incomplete
+  private markChildrenCompleted = (children: Task[], completed: boolean) => {
+    children.forEach(child => {
+      child.completed = completed;
+      child.updatedAt = new Date();
+      if (child.children) {
+        this.markChildrenCompleted(child.children, completed);
+      }
+    });
+  };
+
+  // Helper method to update parent completion status based on children
+  private updateParentCompletionStatus = (task: Task) => {
+    if (task.parentId) {
+      const parent = this.findTaskById(task.parentId);
+      if (parent && parent.children) {
+        const allChildrenCompleted = parent.children.every(child => child.completed);
+        
+        // Parent should be completed if and only if ALL children are completed
+        const shouldBeCompleted = allChildrenCompleted && parent.children.length > 0;
+        
+        if (parent.completed !== shouldBeCompleted) {
+          parent.completed = shouldBeCompleted;
+          parent.updatedAt = new Date();
+        }
+        
+        // Recursively update grandparent
+        this.updateParentCompletionStatus(parent);
+      }
     }
   };
 
@@ -146,6 +195,302 @@ export class TaskStore {
   // Clear error
   clearError = () => {
     this.error = null;
+  };
+
+  // Expansion state management
+  toggleTaskExpansion = (taskId: string) => {
+    if (this.expandedTaskIds.has(taskId)) {
+      this.expandedTaskIds.delete(taskId);
+    } else {
+      this.expandedTaskIds.add(taskId);
+    }
+  };
+
+  isTaskExpanded = (taskId: string): boolean => {
+    return this.expandedTaskIds.has(taskId);
+  };
+
+  // Find path to a task (all parent IDs)
+  findTaskPath = (targetTaskId: string, tasks: Task[] = this.tasks, path: string[] = []): string[] | null => {
+    for (const task of tasks) {
+      const currentPath = [...path, task.id];
+      
+      if (task.id === targetTaskId) {
+        return currentPath;
+      }
+      
+      if (task.children && task.children.length > 0) {
+        const foundPath = this.findTaskPath(targetTaskId, task.children, currentPath);
+        if (foundPath) {
+          return foundPath;
+        }
+      }
+    }
+    return null;
+  };
+
+  // Navigate to task and expand parents
+  navigateToTask = (taskId: string) => {
+    runInAction(() => {
+      this.selectedTaskId = taskId;
+      
+      // Find path to the task
+      const path = this.findTaskPath(taskId);
+      if (path) {
+        // Expand all parent tasks (exclude the target task itself)
+        const parentIds = path.slice(0, -1);
+        parentIds.forEach(parentId => {
+          this.expandedTaskIds.add(parentId);
+        });
+      }
+    });
+  };
+
+  // Auto-expand tasks based on level (for initial load)
+  initializeExpansion = () => {
+    const expandTasksAtLevel = (tasks: Task[], level: number = 0) => {
+      tasks.forEach(task => {
+        if (level < 2 && task.children && task.children.length > 0) {
+          this.expandedTaskIds.add(task.id);
+          expandTasksAtLevel(task.children, level + 1);
+        }
+      });
+    };
+    
+    expandTasksAtLevel(this.tasks);
+  };
+
+  // Fix parentId references in nested structure
+  fixParentReferences = (tasks: Task[] = this.tasks, parentId?: string) => {
+    tasks.forEach(task => {
+      if (parentId) {
+        task.parentId = parentId;
+      }
+      if (task.children && task.children.length > 0) {
+        this.fixParentReferences(task.children, task.id);
+      }
+    });
+  };
+
+  // Recalculate all parent completion states
+  recalculateCompletionStates = (tasks: Task[] = this.tasks) => {
+    tasks.forEach(task => {
+      if (task.children && task.children.length > 0) {
+        // First, recursively fix children
+        this.recalculateCompletionStates(task.children);
+        
+        // Then update this task's completion based on its children
+        const allChildrenCompleted = task.children.every(child => child.completed);
+        if (task.completed !== allChildrenCompleted) {
+          task.completed = allChildrenCompleted;
+          task.updatedAt = new Date();
+        }
+      }
+    });
+  };
+
+  // Clear all tasks
+  clearAllTasks = () => {
+    runInAction(() => {
+      this.tasks = [];
+      this.selectedTaskId = null;
+      this.saveTasks();
+    });
+  };
+
+  // Populate with mock data inspired by "The House That Jack Built"
+  populateWithMockData = () => {
+    runInAction(() => {
+      const now = new Date();
+      const mockTasks: Task[] = [
+        {
+          id: '1',
+          title: 'The House That Jack Built',
+          description: 'A grand project of interconnected tasks',
+          completed: false,
+          priority: 'high',
+          createdAt: now,
+          updatedAt: now,
+          children: [
+            {
+              id: '1.1',
+              title: 'Lay the foundation',
+              description: 'The foundation that supports the house',
+              completed: true,
+              priority: 'urgent',
+              parentId: '1',
+              createdAt: now,
+              updatedAt: now,
+              children: []
+            },
+            {
+              id: '1.2',
+              title: 'Build the walls',
+              description: 'The walls that stand on the foundation',
+              completed: false, // Set to false initially so the logic can work
+              priority: 'high',
+              parentId: '1',
+              createdAt: now,
+              updatedAt: now,
+              children: [
+                {
+                  id: '1.2.1',
+                  title: 'Mix the mortar',
+                  description: 'The mortar that holds the bricks',
+                  completed: true,
+                  priority: 'medium',
+                  parentId: '1.2',
+                  createdAt: now,
+                  updatedAt: now,
+                  children: []
+                },
+                {
+                  id: '1.2.2',
+                  title: 'Lay the bricks',
+                  description: 'The bricks that make the walls',
+                  completed: true,
+                  priority: 'medium',
+                  parentId: '1.2',
+                  createdAt: now,
+                  updatedAt: now,
+                  children: []
+                }
+              ]
+            },
+            {
+              id: '1.3',
+              title: 'Install the roof',
+              description: 'The roof that covers the house',
+              completed: false,
+              priority: 'high',
+              parentId: '1',
+              createdAt: now,
+              updatedAt: now,
+              children: [
+                {
+                  id: '1.3.1',
+                  title: 'Cut the rafters',
+                  description: 'The rafters that support the roof',
+                  completed: false,
+                  priority: 'medium',
+                  parentId: '1.3',
+                  createdAt: now,
+                  updatedAt: now,
+                  children: []
+                },
+                {
+                  id: '1.3.2',
+                  title: 'Install shingles',
+                  description: 'The shingles that cover the rafters',
+                  completed: false,
+                  priority: 'low',
+                  parentId: '1.3',
+                  createdAt: now,
+                  updatedAt: now,
+                  children: []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          id: '2',
+          title: 'Stock the house',
+          description: 'Fill the house with provisions',
+          completed: false,
+          priority: 'medium',
+          createdAt: now,
+          updatedAt: now,
+          children: [
+            {
+              id: '2.1',
+              title: 'Store the malt',
+              description: 'The malt that lay in the house',
+              completed: false,
+              priority: 'low',
+              parentId: '2',
+              createdAt: now,
+              updatedAt: now,
+              children: []
+            },
+            {
+              id: '2.2',
+              title: 'Keep the cat',
+              description: 'The cat that killed the rat that ate the malt',
+              completed: false,
+              priority: 'medium',
+              parentId: '2',
+              createdAt: now,
+              updatedAt: now,
+              children: [
+                {
+                  id: '2.2.1',
+                  title: 'Feed the cat',
+                  description: 'Daily feeding schedule',
+                  completed: false,
+                  priority: 'medium',
+                  parentId: '2.2',
+                  createdAt: now,
+                  updatedAt: now,
+                  children: []
+                },
+                {
+                  id: '2.2.2',
+                  title: 'Train the cat',
+                  description: 'Teach hunting skills',
+                  completed: false,
+                  priority: 'low',
+                  parentId: '2.2',
+                  createdAt: now,
+                  updatedAt: now,
+                  children: []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          id: '3',
+          title: 'Hire the staff',
+          description: 'Assemble the household team',
+          completed: false,
+          priority: 'low',
+          createdAt: now,
+          updatedAt: now,
+          children: [
+            {
+              id: '3.1',
+              title: 'Find the maiden',
+              description: 'The maiden all forlorn that milked the cow',
+              completed: false,
+              priority: 'low',
+              parentId: '3',
+              createdAt: now,
+              updatedAt: now,
+              children: []
+            },
+            {
+              id: '3.2',
+              title: 'Recruit the man',
+              description: 'The man all tattered and torn that kissed the maiden',
+              completed: false,
+              priority: 'low',
+              parentId: '3',
+              createdAt: now,
+              updatedAt: now,
+              children: []
+            }
+          ]
+        }
+      ];
+
+      this.tasks = mockTasks;
+      this.selectedTaskId = null;
+      this.fixParentReferences(); // Ensure parent references are correct
+      this.recalculateCompletionStates(); // Fix completion states
+      this.initializeExpansion(); // Initialize expansion state
+      this.saveTasks();
+    });
   };
 }
 

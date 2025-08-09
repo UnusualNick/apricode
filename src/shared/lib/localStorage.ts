@@ -3,6 +3,7 @@
  */
 export const saveToLocalStorage = <T>(key: string, data: T): void => {
   try {
+    if (typeof window === 'undefined') return; // Skip during SSR
     const serializedData = JSON.stringify(data);
     localStorage.setItem(key, serializedData);
   } catch (error) {
@@ -16,6 +17,7 @@ export const saveToLocalStorage = <T>(key: string, data: T): void => {
  */
 export const loadFromLocalStorage = <T>(key: string): T | null => {
   try {
+    if (typeof window === 'undefined') return null; // Skip during SSR
     const serializedData = localStorage.getItem(key);
     if (serializedData === null) {
       return null;
@@ -32,6 +34,7 @@ export const loadFromLocalStorage = <T>(key: string): T | null => {
  */
 export const removeFromLocalStorage = (key: string): void => {
   try {
+    if (typeof window === 'undefined') return; // Skip during SSR
     localStorage.removeItem(key);
   } catch (error) {
     console.error(`Failed to remove from localStorage with key "${key}":`, error);
@@ -43,6 +46,7 @@ export const removeFromLocalStorage = (key: string): void => {
  */
 export const isLocalStorageAvailable = (): boolean => {
   try {
+    if (typeof window === 'undefined') return false; // Skip during SSR
     const test = '__localStorage_test__';
     localStorage.setItem(test, test);
     localStorage.removeItem(test);

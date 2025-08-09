@@ -1,9 +1,12 @@
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+
 export interface Task {
   id: string;
   title: string;
   description?: string;
   completed: boolean;
-  children?: Task[];
+  priority: TaskPriority;
+  children: Task[];
   parentId?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -12,6 +15,7 @@ export interface Task {
 export interface TaskFormData {
   title: string;
   description?: string;
+  priority: TaskPriority;
 }
 
 export interface TaskStore {

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { taskStore } from '@/entities/task/model/TaskStore';
-import { Task, TaskFormData } from '@/entities/task/model/Task.types';
+import { Task, TaskFormData, TaskPriority } from '@/entities/task/model/Task.types';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,14 @@ import {
 import { Button } from '@/shared/ui/button';
 import { Input } from '@/shared/ui/input';
 import { Label } from '@/shared/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/shared/ui/select';
+import TypedBadge from '@/shared/ui/badges/TypedBadge';
 
 interface EditTaskModalProps {
   isOpen: boolean;
@@ -32,6 +40,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
   const [formData, setFormData] = useState<TaskFormData>({
     title: '',
     description: '',
+    priority: 'medium',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -42,11 +51,13 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
         setFormData({
           title: task.title,
           description: task.description || '',
+          priority: task.priority,
         });
       } else {
         setFormData({
           title: '',
           description: '',
+          priority: 'medium',
         });
       }
     }
@@ -81,6 +92,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
           {
             title: formData.title.trim(),
             description: formData.description?.trim() || undefined,
+            priority: formData.priority,
           },
           parentId
         );
@@ -127,6 +139,36 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({
                 onChange={(e) => handleInputChange('description', e.target.value)}
                 placeholder="Enter task description (optional)..."
               />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="priority">Priority</Label>
+              <Select value={formData.priority} onValueChange={(value: TaskPriority) => handleInputChange('priority', value)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue>
+                    <div className="flex items-center">
+                      <TypedBadge 
+                        parameter={formData.priority}
+                        type="priority"
+                        className="scale-90"
+                      />
+                    </div>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {(['low', 'medium', 'high', 'urgent'] as const).map((priority) => (
+                    <SelectItem key={priority} value={priority}>
+                      <div className="flex items-center">
+                        <TypedBadge 
+                          parameter={priority}
+                          type="priority"
+                          className="scale-90"
+                        />
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           
