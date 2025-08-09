@@ -1,36 +1,139 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Apricode - Task Manager
 
-## Getting Started
+A hierarchical task management application built with Next.js, MobX, and shadcn/ui following Feature-Sliced Design (FSD) architecture.
 
-First, run the development server:
+## 🚀 Technologies
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **[Next.js 15](https://nextjs.org/)** - React framework with App Router
+- **[TypeScript](https://www.typescriptlang.org/)** - Type safety
+- **[MobX](https://mobx.js.org/)** - State management
+- **[Tailwind CSS](https://tailwindcss.com/)** - Styling
+- **[shadcn/ui](https://ui.shadcn.com/)** - UI components
+- **[next-i18next](https://github.com/i18next/next-i18next)** - Internationalization
+- **[Turbopack](https://turbo.build/pack)** - Fast bundling
+- **[pnpm](https://pnpm.io/)** - Package manager
+
+## 🏗️ Architecture
+
+This project follows **Feature-Sliced Design (FSD)** methodology:
+
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── layout.tsx         # Root layout
+│   ├── page.tsx           # Home page
+│   └── tasks/[id]/        # Task detail pages
+├── entities/              # Business entities
+│   └── task/
+│       ├── model/         # MobX stores and types
+│       └── ui/            # Entity components
+├── features/              # Application features
+│   └── taskActions/
+│       └── ui/            # Feature components
+├── pages/                 # Complex page components
+│   └── tasks/
+├── shared/                # Shared resources
+│   ├── ui/                # shadcn/ui components
+│   ├── lib/               # Utility functions
+│   └── hooks/             # Shared hooks
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ✨ Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- 📋 **Hierarchical Tasks** - Create tasks with unlimited nesting levels
+- ✅ **Task Management** - Add, edit, delete, and toggle task completion
+- 💾 **Local Storage** - Persist tasks locally in the browser
+- 🎨 **Modern UI** - Clean interface with shadcn/ui components
+- 📱 **Responsive Design** - Works on desktop and mobile
+- 🌍 **Internationalization** - Multi-language support (EN, ES)
+- ⚡ **Fast Development** - Turbopack for lightning-fast builds
+- 🎯 **Type Safety** - Full TypeScript coverage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🚀 Getting Started
 
-## Learn More
+### Prerequisites
 
-To learn more about Next.js, take a look at the following resources:
+- Node.js 18+
+- pnpm (recommended) or npm
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Installation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd <repository-name>
+   ```
 
-## Deploy on Vercel
+2. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. **Start development server**
+   ```bash
+   pnpm dev
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. **Open your browser**
+   Visit [http://localhost:3000](http://localhost:3000)
+
+### Available Scripts
+
+- `pnpm dev` - Start development server with Turbopack
+- `pnpm build` - Build for production
+- `pnpm start` - Start production server after build
+- `pnpm lint` - Run ESLint
+- `pnpm type-check` - Run TypeScript checks
+
+## 📂 Key Components
+
+### Entities
+- **TaskStore** - MobX store for task management
+- **Task.types** - TypeScript interfaces
+- **TaskItem** - Recursive task component
+- **TaskTree** - Root task list
+
+### Features
+- **AddTaskButton** - Create new tasks
+- **EditTaskModal** - Edit task details
+- **DeleteTaskButton** - Remove tasks with confirmation
+
+### Shared UI
+All shadcn/ui components are located in `src/shared/ui/`:
+- Button, Input, Checkbox
+- Dialog, Label
+- And more...
+
+## 🔧 Configuration
+
+### shadcn/ui Setup
+The project is configured to use shadcn/ui components in the FSD structure:
+```json
+{
+  "aliases": {
+    "components": "@/shared/ui",
+    "ui": "@/shared/ui",
+    "lib": "@/shared/lib"
+  }
+}
+```
+
+### Internationalization
+Locale files are stored in `public/locales/`:
+- `en/common.json` - English translations
+- `es/common.json` - Spanish translations
+
+## 🤝 Contributing
+
+1. Follow the FSD architecture guidelines
+2. Use TypeScript for all new code
+3. Follow the existing code style
+4. Add appropriate tests for new features
+
+## 📝 License
+
+This project is open source and available under the [MIT License](LICENSE).
+
+---
+
+Built with ❤️ using Next.js and modern web technologies.

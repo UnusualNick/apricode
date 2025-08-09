@@ -1,0 +1,33 @@
+{
+  "common": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save",
+    "loading": "Loading...",
+    "error": "Error",
+    "confirm": "Confirm"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "addTask": "Add Task",
+    "addSubtask": "Add Subtask",
+    "editTask": "Edit Task",
+    "deleteTask": "Delete Task",
+    "noTasks": "No tasks yet. Create your first task!",
+    "taskTitle": "Task Title",
+    "taskDescription": "Task Description",
+    "enterTitle": "Enter task title...",
+    "enterDescription": "Enter task description (optional)...",
+    "deleteConfirm": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone.",
+    "deleteSubtasksWarning": "This will also delete all subtasks.",
+    "creating": "Creating...",
+    "updating": "Updating...",
+    "deleting": "Deleting...",
+    "loadingTasks": "Loading tasks...",
+    "errorLoading": "Failed to load tasks",
+    "errorSaving": "Failed to save task",
+    "errorDeleting": "Failed to delete task"
+  }
+}
