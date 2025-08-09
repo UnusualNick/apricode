@@ -50,8 +50,8 @@ export class TaskStore {
         this.isSidebarCollapsed = preferences.isSidebarCollapsed ?? false;
         this.sidebarWidth = preferences.sidebarWidth ?? 400;
       }
-    } catch (error) {
-      console.error('Failed to load UI preferences:', error);
+    } catch {
+      // no-op
     }
   };
 
@@ -62,8 +62,8 @@ export class TaskStore {
         isSidebarCollapsed: this.isSidebarCollapsed,
         sidebarWidth: this.sidebarWidth,
       });
-    } catch (error) {
-      console.error('Failed to save UI preferences:', error);
+    } catch {
+      // no-op
     }
   };
 
@@ -76,7 +76,7 @@ export class TaskStore {
         this.tasks = savedTasks || [];
         this.isLoading = false;
       });
-    } catch (error) {
+    } catch {
       runInAction(() => {
         this.error = 'Failed to load tasks';
         this.isLoading = false;
@@ -88,7 +88,7 @@ export class TaskStore {
   saveTasks = () => {
     try {
       saveToLocalStorage('tasks', this.tasks);
-    } catch (error) {
+    } catch {
       this.error = 'Failed to save tasks';
     }
   };

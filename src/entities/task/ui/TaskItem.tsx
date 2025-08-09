@@ -6,7 +6,7 @@ import { Task } from '../model/Task.types';
 import { taskStore } from '../model/TaskStore';
 import { Checkbox } from '@/shared/ui/checkbox';
 import { Button } from '@/shared/ui/button';
-import { ChevronRight, ChevronDown, Plus, Edit, Trash2 } from 'lucide-react';
+import { ChevronRight, ChevronDown, Plus, Edit } from 'lucide-react';
 import TypedBadge from '@/shared/ui/badges/TypedBadge';
 import { DeleteTaskButton } from '@/features/taskActions/ui/DeleteTaskButton';
 
@@ -16,7 +16,6 @@ interface TaskItemProps {
   onEdit?: (task: Task) => void;
   onDelete?: (taskId: string) => void;
   onAddChild?: (parentId: string) => void;
-  isLast?: boolean;
   parentPath?: boolean[];
 }
 
@@ -26,7 +25,6 @@ export const TaskItem = observer(({
   onEdit,
   onDelete,
   onAddChild,
-  isLast = true,
   parentPath = [],
 }: TaskItemProps) => {
   const taskRef = useRef<HTMLDivElement>(null);
@@ -46,7 +44,6 @@ export const TaskItem = observer(({
   
   // Limit nesting indentation to prevent UI breaking
   const maxIndentLevel = 5;
-  const actualLevel = Math.min(level, maxIndentLevel);
 
   const handleToggleExpansion = () => {
     taskStore.toggleTaskExpansion(task.id);
@@ -243,7 +240,6 @@ export const TaskItem = observer(({
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onAddChild={onAddChild}
-                isLast={isLastChild}
                 parentPath={childParentPath}
               />
             );

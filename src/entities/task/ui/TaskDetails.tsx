@@ -6,16 +6,15 @@ import { taskStore } from '@/entities/task/model/TaskStore';
 import { Button } from '@/shared/ui/button';
 import { Badge } from '@/shared/ui/badge';
 import TypedBadge from '@/shared/ui/badges/TypedBadge';
-import { Calendar, Clock, CheckCircle, Circle, Plus, Edit, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Circle, Edit } from 'lucide-react';
 import { AddTaskButton } from '@/features/taskActions/ui/AddTaskButton';
 import { DeleteTaskButton } from '@/features/taskActions/ui/DeleteTaskButton';
 
 interface TaskDetailsProps {
   onEdit?: (taskId: string) => void;
-  onAddChild?: (parentId: string) => void;
 }
 
-export const TaskDetails = observer(({ onEdit, onAddChild }: TaskDetailsProps) => {
+export const TaskDetails = observer(({ onEdit }: TaskDetailsProps) => {
   const selectedTask = taskStore.selectedTask;
 
   if (!selectedTask) {
