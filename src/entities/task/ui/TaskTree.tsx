@@ -43,15 +43,21 @@ export const TaskTree = observer(({
 
   return (
     <div className="space-y-1 group">
-      {taskStore.rootTasks.map((task) => (
-        <TaskItem
-          key={task.id}
-          task={task}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onAddChild={onAddChild}
-        />
-      ))}
+      {taskStore.rootTasks.map((task, index) => {
+        const isLastRootTask = index === taskStore.rootTasks.length - 1;
+        
+        return (
+          <TaskItem
+            key={task.id}
+            task={task}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onAddChild={onAddChild}
+            isLast={isLastRootTask}
+            parentPath={[]}
+          />
+        );
+      })}
     </div>
   );
 });
