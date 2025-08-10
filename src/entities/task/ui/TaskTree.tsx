@@ -43,9 +43,7 @@ export const TaskTree = observer(({
 
   return (
     <div className="space-y-1 group">
-      {taskStore.rootTasks.map((task, index) => {
-        const isLastRootTask = index === taskStore.rootTasks.length - 1;
-        
+      {taskStore.rootTasks.map((task) => {
         return (
           <TaskItem
             key={task.id}
@@ -53,7 +51,6 @@ export const TaskTree = observer(({
             onEdit={onEdit}
             onDelete={onDelete}
             onAddChild={onAddChild}
-            isLast={isLastRootTask}
             parentPath={[]}
           />
         );

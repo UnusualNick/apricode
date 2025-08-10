@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { taskStore } from '@/entities/task/model/TaskStore';
 import { Button } from '@/shared/ui/button';
 import {
@@ -32,6 +33,7 @@ export const DeleteTaskButton: React.FC<DeleteTaskButtonProps> = ({
 }) => {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { t } = useTranslation();
 
   const handleOpenConfirm = () => {
     setIsConfirmOpen(true);
@@ -43,7 +45,6 @@ export const DeleteTaskButton: React.FC<DeleteTaskButtonProps> = ({
 
   const handleConfirmDelete = async () => {
     setIsDeleting(true);
-    
     try {
       taskStore.deleteTask(taskId);
       setIsConfirmOpen(false);
@@ -63,18 +64,18 @@ export const DeleteTaskButton: React.FC<DeleteTaskButtonProps> = ({
         onClick={handleOpenConfirm}
       >
         {showIcon && <Trash2 className="h-4 w-4" />}
-        {size !== 'sm' && !showIcon && 'Delete'}
+        {size !== 'sm' && !showIcon && t('delete')}
       </Button>
 
       <Dialog open={isConfirmOpen} onOpenChange={handleCloseConfirm}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Delete Task</DialogTitle>
+            <DialogTitle>{t('deleteTask')}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &quot;{taskTitle}&quot;? This action cannot be undone.
+              {t('deleteTaskConfirm', { title: taskTitle })}
               {(taskStore.findTaskById(taskId)?.children?.length || 0) > 0 && (
                 <span className="block mt-2 font-medium">
-                  This will also delete all subtasks.
+                  {t('deleteTaskWithSubtasks')}
                 </span>
               )}
             </DialogDescription>
@@ -87,7 +88,7 @@ export const DeleteTaskButton: React.FC<DeleteTaskButtonProps> = ({
               onClick={handleCloseConfirm}
               disabled={isDeleting}
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               type="button"
@@ -95,7 +96,7 @@ export const DeleteTaskButton: React.FC<DeleteTaskButtonProps> = ({
               onClick={handleConfirmDelete}
               disabled={isDeleting}
             >
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? t('deleting') : t('delete')}
             </Button>
           </DialogFooter>
         </DialogContent>

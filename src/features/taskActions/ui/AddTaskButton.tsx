@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/shared/ui/button';
 import { Plus } from 'lucide-react';
 import { EditTaskModal } from './EditTaskModal';
@@ -19,6 +20,7 @@ export const AddTaskButton: React.FC<AddTaskButtonProps> = ({
   className,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { t } = useTranslation();
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -37,14 +39,14 @@ export const AddTaskButton: React.FC<AddTaskButtonProps> = ({
         onClick={handleOpenModal}
       >
         <Plus className="h-4 w-4 mr-2" />
-        {parentId ? 'Add Subtask' : 'Add Task'}
+        {parentId ? t('addSubtask') : t('addTask')}
       </Button>
 
       <EditTaskModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         parentId={parentId}
-        title={parentId ? 'Add New Subtask' : 'Add New Task'}
+        title={parentId ? t('addNewSubtask') : t('addNewTask')}
       />
     </>
   );

@@ -14,6 +14,7 @@ interface TaskSidebarProps {
   onDelete?: (taskId: string) => void;
   onAddChild?: (parentId: string) => void;
   isCollapsed?: boolean;
+  onToggleCollapse?: (collapsed: boolean) => void;
 }
 
 export const TaskSidebar: React.FC<TaskSidebarProps> = observer(({
@@ -21,6 +22,7 @@ export const TaskSidebar: React.FC<TaskSidebarProps> = observer(({
   onDelete,
   onAddChild,
   isCollapsed = false,
+  onToggleCollapse,
 }) => {
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -163,6 +165,16 @@ export const TaskSidebar: React.FC<TaskSidebarProps> = observer(({
               <h2 className="text-lg font-semibold">Tasks</h2>
               <AddTaskButton variant="ghost" size="sm" />
             </div>
+          )}
+          {onToggleCollapse && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onToggleCollapse(!isCollapsed)}
+              className="shrink-0"
+            >
+              {isCollapsed ? <span>&gt;</span> : <span>&lt;</span>}
+            </Button>
           )}
         </div>
 

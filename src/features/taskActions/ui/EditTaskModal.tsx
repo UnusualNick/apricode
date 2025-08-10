@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { observer } from 'mobx-react-lite';
 import { taskStore } from '@/entities/task/model/TaskStore';
 import { Task, TaskFormData, TaskPriority, TaskCompletionStatus } from '@/entities/task/model/Task.types';
@@ -36,8 +37,9 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = observer(({
   onClose,
   task,
   parentId,
-  title = 'Edit Task',
+  title,
 }) => {
+  const { t } = useTranslation();
   // Initialize form data when modal opens or task changes
   useEffect(() => {
     if (isOpen && task) {
@@ -97,34 +99,34 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = observer(({
       <DialogContent className="sm:max-w-[425px]">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
+            <DialogTitle>{title || (task ? t('editTask') : t('createTask'))}</DialogTitle>
           </DialogHeader>
           
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">{t('title')}</Label>
               <Input
                 id="title"
                 value={taskStore.taskFormData.title}
                 onChange={(e) => handleInputChange('title', e.target.value)}
-                placeholder="Enter task title..."
+                placeholder={t('enterTaskTitle')}
                 required
                 autoFocus
               />
             </div>
             
             <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">{t('description')}</Label>
               <Input
                 id="description"
                 value={taskStore.taskFormData.description}
                 onChange={(e) => handleInputChange('description', e.target.value)}
-                placeholder="Enter task description (optional)..."
+                placeholder={t('enterTaskDescriptionOptional')}
               />
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="priority">Priority</Label>
+              <Label htmlFor="priority">{t('priority')}</Label>
               <Select value={taskStore.taskFormData.priority} onValueChange={(value: TaskPriority) => handleInputChange('priority', value)}>
                 <SelectTrigger className="w-full">
                   <SelectValue>
@@ -154,7 +156,7 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = observer(({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="completionStatus">Completion Status</Label>
+              <Label htmlFor="completionStatus">{t('completionStatus')}</Label>
               <Select value={taskStore.taskFormData.completionStatus} onValueChange={(value: TaskCompletionStatus) => handleInputChange('completionStatus', value)}>
                 <SelectTrigger className="w-full">
                   <SelectValue>
@@ -191,13 +193,13 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = observer(({
               onClick={handleCancel}
               disabled={taskStore.isSubmitting}
             >
-              Cancel
+              {t('cancel')}
             </Button>
             <Button
               type="submit"
               disabled={!taskStore.taskFormData.title.trim() || taskStore.isSubmitting}
             >
-              {taskStore.isSubmitting ? 'Saving...' : task ? 'Update' : 'Create'}
+              {taskStore.isSubmitting ? t('saving') : task ? t('update') : t('create')}
             </Button>
           </DialogFooter>
         </form>

@@ -71,7 +71,6 @@ const Home = observer(() => {
         <div className="flex-1 p-6">
           <TaskDetails
             onEdit={handleEditTaskById}
-            onAddChild={handleAddChild}
           />
         </div>
       </div>
