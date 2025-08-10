@@ -121,7 +121,7 @@ The project is configured to use shadcn/ui components in the FSD structure:
 ### Internationalization
 Locale files are stored in `public/locales/`:
 - `en/common.json` - English translations
-- `es/common.json` - Spanish translations
+- `ru/common.json` - Russian translations
 
 ## 🤝 Contributing
 
